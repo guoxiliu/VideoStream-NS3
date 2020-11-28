@@ -25,6 +25,7 @@ def build(bld):
         'helper/packet-sink-helper.cc',
         'helper/udp-client-server-helper.cc',
         'helper/udp-echo-helper.cc',
+        'helper/video-stream-helper.cc',
         'helper/three-gpp-http-helper.cc',
         ]
 
@@ -59,6 +60,7 @@ def build(bld):
         'helper/packet-sink-helper.h',
         'helper/udp-client-server-helper.h',
         'helper/udp-echo-helper.h',
+        'helper/video-stream-helper.h',
         'helper/three-gpp-http-helper.h'
         ]
     
