@@ -3,16 +3,17 @@
 #include "ns3/log.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv6-address.h"
+#include "ns3/address-utils.h"
 #include "ns3/nstime.h"
 #include "ns3/inet-socket-address.h"
 #include "ns3/inet6-socket-address.h"
 #include "ns3/socket.h"
+#include "ns3/udp-socket.h"
 #include "ns3/simulator.h"
 #include "ns3/socket-factory.h"
 #include "ns3/packet.h"
 #include "ns3/uinteger.h"
-#include "ns3/trace-source-accessor.h"
-#include "ns3/video-stream-client.h"
+#include "video-stream-client.h"
 
 namespace ns3 {
 
@@ -25,71 +26,36 @@ VideoStreamClient::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::VideoStreamClient")
     .SetParent<Application> ()
-    .SetGroupName("Applications")
+    .SetGroupName ("Applications")
     .AddConstructor<VideoStreamClient> ()
-    .AddAttribute ("Interval",
-                    "The time to wait between packets",
-                    TimeValue (Seconds (1.0)),
-                    MakeTimeAccessor (&VideoStreamClient::m_interval),
-                    MakeTimeChecker ())
-    .AddAttribute ("RemoteAddress",
-                    "The destination address of the outbound packets",
-                    AddressValue (),
-                    MakeAddressAccessor (&VideoStreamClient::m_peerAddress),
-                    MakeAddressChecker ())
-    .AddAttribute ("RemotePort",
-                    "The destination port of the outbound packets",
-                    UintegerValue (0),
-                    MakeUintegerAccessor (&VideoStreamClient::m_peerPort),
+    .AddAttribute ("Port", "Port on which we listen for incoming packets.",
+                    UintegerValue (9),
+                    MakeUintegerAccessor (&VideoStreamClient::m_port),
                     MakeUintegerChecker<uint16_t> ())
-    .AddAttribute ("PacketSize",
-                    "Size of the outbound packets",
-                    UintegerValue (100),
-                    MakeUintegerAccessor (&VideoStreamClient::SetDataSize, &VideoStreamClient::GetDataSize),
-                    MakeUintegerChecker<uint32_t> ())
-
-    ;
-    return tid;
+  ;
+  return tid;
 }
 
 VideoStreamClient::VideoStreamClient ()
 {
   NS_LOG_FUNCTION (this);
-  m_socket = 0;
-  m_size = 0;
-  m_frameRate = 0;
-  m_sendEvent = EventId ();
 }
 
 VideoStreamClient::~VideoStreamClient ()
 {
   NS_LOG_FUNCTION (this);
   m_socket = 0;
+  m_socket6 = 0;
 }
 
 void
-VideoStreamClient::SetRemote (Address ip, uint16_t port)
-{
-  NS_LOG_FUNCTION (this << ip << port);
-  m_peerAddress = ip;
-  m_peerPort = port;
-}
-
-void 
-VideoStreamClient::SetRemote (Address addr)
-{
-  NS_LOG_FUNCTION (this << addr);
-  m_peerAddress = addr;
-}
-
-void 
 VideoStreamClient::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
   Application::DoDispose ();
 }
 
-void
+void 
 VideoStreamClient::StartApplication (void)
 {
   NS_LOG_FUNCTION (this);
@@ -98,46 +64,49 @@ VideoStreamClient::StartApplication (void)
   {
     TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
     m_socket = Socket::CreateSocket (GetNode (), tid);
-    if (Ipv4Address::IsMatchingType (m_peerAddress) == true)
+    InetSocketAddress local = InetSocketAddress (Ipv4Address::GetAny (), m_port);
+    if (m_socket->Bind (local) == -1)
     {
-      if (m_socket->Bind () == -1)
-      {
-        NS_FATAL_ERROR ("Failed to bind socket");
-      }
-      m_socket->Connect (InetSocketAddress(Ipv4Address::ConvertFrom (m_peerAddress), m_peerPort));
+      NS_FATAL_ERROR ("Failed to bind socket");
     }
-    else if (Ipv6Address::IsMatchingType (m_peerAddress) == true)
+    if (addressUtils::IsMulticast (m_local))
     {
-      if (m_socket->Bind6 () == -1)
+      Ptr<UdpSocket> udpSocket = DynamicCast<UdpSocket> (m_socket);
+      if (udpSocket)
       {
-        NS_FATAL_ERROR ("Failed to bind socket");
+        udpSocket->MulticastJoinGroup (0, m_local);
       }
-      m_socket->Connect (m_peerAddress);
-    }
-    else if (InetSocketAddress::IsMatchingType (m_peerAddress) == true)
-    {
-      if (m_socket->Bind () == -1)
+      else
       {
-        NS_FATAL_ERROR ("Failed to bind socket");
+        NS_FATAL_ERROR ("Error: Failed to join multicast group");
       }
-      m_socket->Connect (m_peerAddress);
-    }
-    else if (Inet6SocketAddress::IsMatchingType (m_peerAddress) == true)
-    {
-      if (m_socket->Bind6 () == -1)
-      {
-        NS_FATAL_ERROR ("Failed to bind socket");
-      }
-      m_socket->Connect (m_peerAddress);
-    }
-    else
-    {
-      NS_ASSERT_MSG (false, "Incompatible address type: " << m_peerAddress);
     }
   }
+  if (m_socket6 == 0)
+  {
+      TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
+      m_socket6 = Socket::CreateSocket (GetNode (), tid);
+      Inet6SocketAddress local6 = Inet6SocketAddress (Ipv6Address::GetAny (), m_port);
+      if (m_socket6->Bind (local6) == -1)
+      {
+        NS_FATAL_ERROR ("Failed to bind socket");
+      }
+      if (addressUtils::IsMulticast (local6))
+      {
+        Ptr<UdpSocket> udpSocket = DynamicCast<UdpSocket> (m_socket6);
+        if (udpSocket)
+        {
+          udpSocket->MulticastJoinGroup (0, local6);
+        }
+        else
+        {
+          NS_FATAL_ERROR ("Error: Failed to join multicast group");
+        }
+      }
+  }
 
-  m_socket->SetAllowBroadcast (true);
-  ScheduleTransmit (Seconds (0.));
+  m_socket->SetRecvCallback (MakeCallback (&VideoStreamClient::HandleRead, this));
+  m_socket6->SetRecvCallback (MakeCallback (&VideoStreamClient::HandleRead, this));
 }
 
 void
@@ -147,46 +116,37 @@ VideoStreamClient::StopApplication ()
 
   if (m_socket != 0)
   {
-    m_socket->Close();
+    m_socket->Close ();
     m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket>> ());
-    m_socket = 0;
   }
-
-  Simulator::Cancel (m_sendEvent);
+  if (m_socket6 != 0)
+  {
+    m_socket6->Close();
+    m_socket6->SetRecvCallback (MakeNullCallback<void, Ptr<Socket>> ());
+  }
 }
 
 void 
-VideoStreamClient::SetDataSize (uint32_t dataSize)
+VideoStreamClient::HandleRead (Ptr<Socket> socket)
 {
-  NS_LOG_FUNCTION (this << dataSize);
-  m_size = dataSize;
-}
+  NS_LOG_FUNCTION (this << socket);
 
-uint32_t
-VideoStreamClient::GetDataSize (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_size;
-}
-
-void 
-VideoStreamClient::ScheduleTransmit (Time dt)
-{
-  NS_LOG_FUNCTION (this << dt);
-  m_sendEvent = Simulator::Schedule (dt, &VideoStreamClient::Send, this);
-}
-
-void 
-VideoStreamClient::Send (void)
-{
-  NS_LOG_FUNCTION (this);
-
-  NS_ASSERT (m_sendEvent.IsExpired ());
-
-  Ptr<Packet> p = Create<Packet> (m_size);
-  m_socket->Send (p);
-
-  ScheduleTransmit (m_interval);
+  Ptr<Packet> packet;
+  Address from;
+  Address localAddress;
+  while ((packet = socket->RecvFrom (from)))
+  {
+    socket->GetSockName (localAddress);
+    if (InetSocketAddress::IsMatchingType (from))
+    {
+      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server received " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom (from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());
+    }
+    else if (Inet6SocketAddress::IsMatchingType (from))
+    {
+      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server received " << packet->GetSize () << " bytes from " << Inet6SocketAddress::ConvertFrom (from).GetIpv6 () << " port " << Inet6SocketAddress::ConvertFrom (from).GetPort ());
+    }
+  }
+  
 }
 
 }
