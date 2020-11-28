@@ -6,8 +6,11 @@
 #include "ns3/application.h"
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
+#include "ns3/string.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/traced-callback.h"
+
+#include <fstream>
 
 namespace ns3 {
 
@@ -46,32 +49,32 @@ class Packet;
     void SetRemote (Address addr);
 
     /**
-     * @brief Set the frame size of the video.
+     * @brief Set the name of the file containing the frame sizes.
      * 
-      * @param frameSize the number of bytes of each frame
+      * @param frameFile the file name
      */
-    void SetFrameSize (uint32_t frameSize);
+    void SetFrameFile (std::string frameFile);
 
     /**
-     * @brief Get the frame size of the video.
+     * @brief Get the name of the file containing the frame sizes.
      * 
-     * @return the number of bytes of each frame
+     * @return the file name 
      */
-    uint32_t GetFrameSize (void) const;
+    std::string GetFrameFile (void) const;
 
     /**
      * @brief Set the maximum packet size.
      * 
      * @param maxPacketSize the largest number of bytes a packet can be
      */
-    void SetMaxPacketSize (uint16_t maxPacketSize);
+    void SetMaxPacketSize (uint32_t maxPacketSize);
 
     /**
      * @brief Get the maximum packet size.
      * 
-     * @return uint16_t the largest number of bytes a packet can be
+     * @return uint32_t the largest number of bytes a packet can be
      */
-    uint16_t GetMaxPacketSize (void) const;
+    uint32_t GetMaxPacketSize (void) const;
 
   protected:
     virtual void DoDispose (void);
@@ -87,23 +90,31 @@ class Packet;
      * @param dt time interval between packets
      */
     void ScheduleTransmit (Time dt);
+
+    /**
+     * @brief Send a packet with specified size.
+     * 
+     * @param packetSize the number of bytes for the packet to be sent
+     */
+    void SendPacket (uint32_t packetSize);
     
     /**
-     * @brief Send a packet.
+     * @brief Send the video frame from the frame list.
      */
     void Send (void);
 
-    bool m_running; //!< Application is running or not
     Time m_interval; //!< Packet inter-send time
-    uint16_t m_maxPacketSize; //!< Maximum size of the packet to be sent
+    uint32_t m_maxPacketSize; //!< Maximum size of the packet to be sent
 
+    uint32_t m_sent; //!< Counter for sent frames
     Ptr<Socket> m_socket; //!< Socket
     Address m_peerAddress; //!< Remote peer address
     uint16_t m_peerPort; //!< Remote peer port
     EventId m_sendEvent; //!< Event to send the next packet
 
-    uint32_t m_frameSize; //!< Size of each frame
     uint32_t m_frameRate; //!< Number of frames per second to be sent
+    std::string m_frameFile; //!< Name of the file containing frame sizes
+    std::vector<uint32_t> m_frameSizeList; //!< List of video frame sizes
   };
 
 } // namespace ns3

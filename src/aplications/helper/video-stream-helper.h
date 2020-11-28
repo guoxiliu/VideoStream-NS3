@@ -29,13 +29,28 @@ private:
   ObjectFactory m_factory;
 
 public:
-/**
+  /**
+   * @brief Construct a new VideoStreamServerHelper object.
+   * 
+   * @param ip the IP address of the remote client
+   * @param port the port number of the remote client
+   * @param filename the file that stores the video frame sizes
+   */
+  VideoStreamServerHelper (Address ip, uint16_t port, std::string filename);
+  /**
    * @brief Construct a new VideoStreamServerHelper object. 
    * 
    * @param ip the IP address of the remote client
    * @param port the port number of the remote client
    */
   VideoStreamServerHelper (Address ip, uint16_t port);
+  /**
+   * @brief Construct a new VideoStreamServerHelper object.
+   * 
+   * @param addr the address of the remote client
+   * @param filename the file that stores the video frame sizes
+   */
+  VideoStreamServerHelper (Address addr, std::string filename);
   /**
    * @brief Construct a new VideoStreamServerHelper object. 
    * 

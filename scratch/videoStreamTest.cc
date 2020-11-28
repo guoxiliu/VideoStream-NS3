@@ -49,15 +49,16 @@ main (int argc, char *argv[])
   VideoStreamClientHelper videoClient (5000);
   ApplicationContainer clientApp = videoClient.Install (nodes.Get (1));
   clientApp.Start (Seconds (0.0));
-  clientApp.Stop (Seconds (8.0));
+  clientApp.Stop (Seconds (100.0));
 
   VideoStreamServerHelper videoServer (interfaces.GetAddress (1), 5000);
   videoServer.SetAttribute ("MaxPacketSize", UintegerValue (1400));
-  videoServer.SetAttribute ("FrameSize", UintegerValue (4096));
+  videoServer.SetAttribute ("FrameFile", StringValue ("./scratch/frameList.txt"));
+  // videoServer.SetAttribute ("FrameSize", UintegerValue (4096));
 
   ApplicationContainer serverApp = videoServer.Install (nodes.Get (0));
   serverApp.Start (Seconds (1.0));
-  serverApp.Stop (Seconds (10.0));
+  serverApp.Stop (Seconds (100.0));
 
   Simulator::Run ();
   Simulator::Destroy ();

@@ -43,10 +43,10 @@ VideoStreamServer::GetTypeId (void)
                     UintegerValue (1400),
                     MakeUintegerAccessor (&VideoStreamServer::m_maxPacketSize),
                     MakeUintegerChecker<uint16_t> ())
-    .AddAttribute ("FrameSize", "Size of each frame",
-                    UintegerValue (4096),
-                    MakeUintegerAccessor (&VideoStreamServer::SetFrameSize, &VideoStreamServer::GetFrameSize),
-                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("FrameFile", "The file that contains the video frame sizes",
+                    StringValue ("frameList.txt"),
+                    MakeStringAccessor (&VideoStreamServer::SetFrameFile, &VideoStreamServer::GetFrameFile),
+                    MakeStringChecker ())
     ;
     return tid;
 }
@@ -55,10 +55,9 @@ VideoStreamServer::VideoStreamServer ()
 {
   NS_LOG_FUNCTION (this);
   m_socket = 0;
-  m_running = false;
+  m_sent = 0;
   m_maxPacketSize = 1400;
-  m_frameSize = 0;
-  m_frameRate = 0;
+  m_frameRate = 25;
   m_sendEvent = EventId ();
 }
 
@@ -95,7 +94,6 @@ VideoStreamServer::StartApplication (void)
 {
   NS_LOG_FUNCTION (this);
 
-  m_running = true;
   if (m_socket == 0)
   {
     TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
@@ -147,7 +145,6 @@ VideoStreamServer::StopApplication ()
 {
   NS_LOG_FUNCTION (this);
 
-  m_running = false;
 
   if (m_socket != 0)
   {
@@ -160,26 +157,32 @@ VideoStreamServer::StopApplication ()
 }
 
 void 
-VideoStreamServer::SetFrameSize (uint32_t frameSize)
+VideoStreamServer::SetFrameFile (std::string frameFile)
 {
-  NS_LOG_FUNCTION (this << frameSize);
-  m_frameSize = frameSize;
+  NS_LOG_FUNCTION (this << frameFile);
+  m_frameFile = frameFile;
+  std::string line;
+  std::ifstream fileStream(frameFile);
+  for (int result; std::getline(fileStream, line); result = std::stoi(line))
+  {
+    m_frameSizeList.push_back (result);
+  }
 }
 
-uint32_t
-VideoStreamServer::GetFrameSize (void) const
+std::string
+VideoStreamServer::GetFrameFile (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_frameSize;
+  return m_frameFile;
 }
 
 void
-VideoStreamServer::SetMaxPacketSize (uint16_t maxPacketSize)
+VideoStreamServer::SetMaxPacketSize (uint32_t maxPacketSize)
 {
   m_maxPacketSize = maxPacketSize;
 }
 
-uint16_t
+uint32_t
 VideoStreamServer::GetMaxPacketSize (void) const
 {
   return m_maxPacketSize;
@@ -189,10 +192,7 @@ void
 VideoStreamServer::ScheduleTransmit (Time dt)
 {
   NS_LOG_FUNCTION (this << dt);
-  if (m_running)
-  {
-    m_sendEvent = Simulator::Schedule (dt, &VideoStreamServer::Send, this);
-  }
+  m_sendEvent = Simulator::Schedule (dt, &VideoStreamServer::Send, this);
 }
 
 void 
@@ -202,27 +202,32 @@ VideoStreamServer::Send (void)
 
   NS_ASSERT (m_sendEvent.IsExpired ());
 
-  Ptr<Packet> p;
+  
   // the frame might require several packets to send
-  for (uint i = 0; i < m_frameSize / m_maxPacketSize; i++)
+  uint32_t frameSize = m_frameSizeList[m_sent];
+  for (uint i = 0; i < frameSize / m_maxPacketSize; i++)
   {
-    p = Create<Packet> (m_maxPacketSize);
-    m_socket->Send (p);
-    // if ((m_socket->Send (p)) >= 0)
-    // {
-    //   NS_LOG_INFO ("Sent " << m_maxPacketSize << " bytes to " << m_peerAddress);
-    // }
-    // else
-    // {
-    //   NS_LOG_INFO ("Error while sending " << m_maxPacketSize << "bytes to " << m_peerAddress);
-    // }
+    SendPacket (m_maxPacketSize);
   }
 
-  uint16_t remainder = m_frameSize % m_maxPacketSize;
-  p = Create<Packet> (remainder);
-  m_socket->Send(p);
+  uint16_t remainder = frameSize % m_maxPacketSize;
+  SendPacket (remainder);
+  m_sent++;
 
-  ScheduleTransmit (Seconds (1.0 / m_frameRate));
+  if (m_sent < m_frameSizeList.size() - 1)
+  {
+    ScheduleTransmit (MilliSeconds (1000 / m_frameRate));
+  }
+}
+
+void 
+VideoStreamServer::SendPacket (uint32_t packetSize)
+{
+  Ptr<Packet> p = Create<Packet> (packetSize);
+  if ((m_socket->Send (p)) < 0)
+  {
+    NS_LOG_INFO ("Error while sending " << packetSize << "bytes to " << m_peerAddress);
+  }
 }
 
 }

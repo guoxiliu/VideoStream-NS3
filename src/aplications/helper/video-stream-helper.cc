@@ -8,11 +8,26 @@
 
 namespace ns3{
 
+VideoStreamServerHelper::VideoStreamServerHelper(Address ip, uint16_t port, std::string filename)
+{
+  m_factory.SetTypeId (VideoStreamServer::GetTypeId ());
+  SetAttribute ("RemoteAddress", AddressValue (ip));
+  SetAttribute ("RemotePort", UintegerValue (port));
+  SetAttribute ("FrameFile", StringValue (filename));
+}
+
 VideoStreamServerHelper::VideoStreamServerHelper(Address ip, uint16_t port)
 {
   m_factory.SetTypeId (VideoStreamServer::GetTypeId ());
   SetAttribute ("RemoteAddress", AddressValue (ip));
   SetAttribute ("RemotePort", UintegerValue (port));
+}
+
+VideoStreamServerHelper::VideoStreamServerHelper(Address addr, std::string filename)
+{
+  m_factory.SetTypeId (VideoStreamServer::GetTypeId ());
+  SetAttribute ("RemoteAddress", AddressValue (addr));
+  SetAttribute ("FrameFile", StringValue (filename));
 }
 
 VideoStreamServerHelper::VideoStreamServerHelper(Address addr)
