@@ -29,6 +29,14 @@ public:
   VideoStreamClient ();
   virtual ~VideoStreamClient ();
 
+  /**
+   * @brief Read data from the frame buffer. If the buffer does not have 
+   * enough frames, it will reschedule the reading event next second.
+   * 
+   * @return the updated buffer size (-1 if the buffer size is smaller than the fps)
+   */
+  uint32_t ReadFromBuffer (void);
+
 protected:
   virtual void DoDispose (void);
 
@@ -41,20 +49,21 @@ private:
    * 
    * This function is called by lower layers.
    * 
-   * @param socket the socket the packet was received to.
+   * @param socket the socket the packet was received to
    */
   void HandleRead (Ptr<Socket> socket);
 
-  uint16_t m_port;
-  Ptr<Socket> m_socket;
-  Ptr<Socket> m_socket6;
-  Address m_local;
+  uint16_t m_port; //!< Remote port
+  Ptr<Socket> m_socket; //!< Socket
+  Address m_local; //!< Local multicast address
 
-  uint32_t m_frameRate;
-  EventId m_bufferEvent;
+  uint16_t m_initialDelay; //!< Seconds to wait before displaying the content
+  uint32_t m_frameRate; //!< Number of frames per second to be played
+  uint32_t m_currentBufferSize; //!< Size of the frame buffer
+  EventId m_bufferEvent; //!< Event to read from the buffer
 
 };
 
 } // namespace ns3
 
-#endif /* VIDEO_STREAM_SERVER_H */
+#endif /* VIDEO_STREAM_CLIENT_H */

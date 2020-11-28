@@ -21,7 +21,7 @@ class Packet;
   {
   public:
     /**
-     * @brief Get the type ID
+     * @brief Get the type ID.
      * 
      * @return the object TypeId
      */
@@ -32,30 +32,30 @@ class Packet;
     virtual ~VideoStreamServer ();
 
     /**
-     * @brief Set the remote address and port
+     * @brief Set the remote address and port.
      * 
      * @param ip remote IP address
      * @param port remote port
      */
     void SetRemote (Address ip, uint16_t port);
     /**
-     * @brief Set the remote address
+     * @brief Set the remote address.
      * 
      * @param addr remote address
      */
     void SetRemote (Address addr);
 
     /**
-     * @brief Set the data size of the packet
+     * @brief Set the data size of the packet.
      * 
-     * @param dataSize  the size of the data you want to send
+     * @param dataSize the size of the data you want to send
      */
     void SetDataSize (uint32_t dataSize);
 
     /**
      * @brief Get the number of bytes that will be sent to the server.
      * 
-     * @return the 
+     * @return the number of data bytes
      */
     uint32_t GetDataSize (void) const;
 
@@ -68,14 +68,14 @@ class Packet;
     virtual void StopApplication (void);
 
     /**
-     * @brief Schedule the next packet transmission
+     * @brief Schedule the next packet transmission.
      * 
      * @param dt time interval between packets
      */
     void ScheduleTransmit (Time dt);
     
     /**
-     * @brief Send a packet
+     * @brief Send a packet.
      */
     void Send (void);
 

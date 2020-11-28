@@ -12,47 +12,47 @@
 #include "ns3/packet.h"
 #include "ns3/uinteger.h"
 #include "ns3/trace-source-accessor.h"
-#include "ns3/video-stream-client.h"
+#include "ns3/video-stream-server.h"
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("VideoStreamClientApplication");
+NS_LOG_COMPONENT_DEFINE ("VideoStreamServerApplication");
 
-NS_OBJECT_ENSURE_REGISTERED (VideoStreamClient);
+NS_OBJECT_ENSURE_REGISTERED (VideoStreamServer);
 
 TypeId
-VideoStreamClient::GetTypeId (void)
+VideoStreamServer::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::VideoStreamClient")
+  static TypeId tid = TypeId ("ns3::VideoStreamServer")
     .SetParent<Application> ()
     .SetGroupName("Applications")
-    .AddConstructor<VideoStreamClient> ()
+    .AddConstructor<VideoStreamServer> ()
     .AddAttribute ("Interval",
                     "The time to wait between packets",
                     TimeValue (Seconds (1.0)),
-                    MakeTimeAccessor (&VideoStreamClient::m_interval),
+                    MakeTimeAccessor (&VideoStreamServer::m_interval),
                     MakeTimeChecker ())
     .AddAttribute ("RemoteAddress",
                     "The destination address of the outbound packets",
                     AddressValue (),
-                    MakeAddressAccessor (&VideoStreamClient::m_peerAddress),
+                    MakeAddressAccessor (&VideoStreamServer::m_peerAddress),
                     MakeAddressChecker ())
     .AddAttribute ("RemotePort",
                     "The destination port of the outbound packets",
                     UintegerValue (0),
-                    MakeUintegerAccessor (&VideoStreamClient::m_peerPort),
+                    MakeUintegerAccessor (&VideoStreamServer::m_peerPort),
                     MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("PacketSize",
                     "Size of the outbound packets",
                     UintegerValue (100),
-                    MakeUintegerAccessor (&VideoStreamClient::SetDataSize, &VideoStreamClient::GetDataSize),
+                    MakeUintegerAccessor (&VideoStreamServer::SetDataSize, &VideoStreamServer::GetDataSize),
                     MakeUintegerChecker<uint32_t> ())
 
     ;
     return tid;
 }
 
-VideoStreamClient::VideoStreamClient ()
+VideoStreamServer::VideoStreamServer ()
 {
   NS_LOG_FUNCTION (this);
   m_socket = 0;
@@ -61,14 +61,14 @@ VideoStreamClient::VideoStreamClient ()
   m_sendEvent = EventId ();
 }
 
-VideoStreamClient::~VideoStreamClient ()
+VideoStreamServer::~VideoStreamServer ()
 {
   NS_LOG_FUNCTION (this);
   m_socket = 0;
 }
 
 void
-VideoStreamClient::SetRemote (Address ip, uint16_t port)
+VideoStreamServer::SetRemote (Address ip, uint16_t port)
 {
   NS_LOG_FUNCTION (this << ip << port);
   m_peerAddress = ip;
@@ -76,21 +76,21 @@ VideoStreamClient::SetRemote (Address ip, uint16_t port)
 }
 
 void 
-VideoStreamClient::SetRemote (Address addr)
+VideoStreamServer::SetRemote (Address addr)
 {
   NS_LOG_FUNCTION (this << addr);
   m_peerAddress = addr;
 }
 
 void 
-VideoStreamClient::DoDispose (void)
+VideoStreamServer::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
   Application::DoDispose ();
 }
 
 void
-VideoStreamClient::StartApplication (void)
+VideoStreamServer::StartApplication (void)
 {
   NS_LOG_FUNCTION (this);
 
@@ -141,7 +141,7 @@ VideoStreamClient::StartApplication (void)
 }
 
 void
-VideoStreamClient::StopApplication ()
+VideoStreamServer::StopApplication ()
 {
   NS_LOG_FUNCTION (this);
 
@@ -156,28 +156,28 @@ VideoStreamClient::StopApplication ()
 }
 
 void 
-VideoStreamClient::SetDataSize (uint32_t dataSize)
+VideoStreamServer::SetDataSize (uint32_t dataSize)
 {
   NS_LOG_FUNCTION (this << dataSize);
   m_size = dataSize;
 }
 
 uint32_t
-VideoStreamClient::GetDataSize (void) const
+VideoStreamServer::GetDataSize (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_size;
 }
 
 void 
-VideoStreamClient::ScheduleTransmit (Time dt)
+VideoStreamServer::ScheduleTransmit (Time dt)
 {
   NS_LOG_FUNCTION (this << dt);
-  m_sendEvent = Simulator::Schedule (dt, &VideoStreamClient::Send, this);
+  m_sendEvent = Simulator::Schedule (dt, &VideoStreamServer::Send, this);
 }
 
 void 
-VideoStreamClient::Send (void)
+VideoStreamServer::Send (void)
 {
   NS_LOG_FUNCTION (this);
 
