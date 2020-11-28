@@ -99,7 +99,10 @@ VideoStreamClient::StopApplication ()
   {
     m_socket->Close ();
     m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket>> ());
+    m_socket = 0;
   }
+
+  Simulator::Cancel (m_bufferEvent);
 }
 
 uint32_t 
@@ -131,7 +134,7 @@ VideoStreamClient::HandleRead (Ptr<Socket> socket)
     socket->GetSockName (localAddress);
     if (InetSocketAddress::IsMatchingType (from))
     {
-      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server received " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom (from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());
+      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s client received " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom (from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());
 
       m_currentBufferSize++;
     }

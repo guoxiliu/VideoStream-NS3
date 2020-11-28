@@ -36,7 +36,7 @@ VideoStreamServer::GetTypeId (void)
                     MakeAddressAccessor (&VideoStreamServer::m_peerAddress),
                     MakeAddressChecker ())
     .AddAttribute ("RemotePort", "The destination port of the outbound packets",
-                    UintegerValue (5000),
+                    UintegerValue (0),
                     MakeUintegerAccessor (&VideoStreamServer::m_peerPort),
                     MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("MaxPacketSize", "The maximum size of a packet",
@@ -55,6 +55,7 @@ VideoStreamServer::VideoStreamServer ()
 {
   NS_LOG_FUNCTION (this);
   m_socket = 0;
+  m_running = false;
   m_maxPacketSize = 1400;
   m_frameSize = 0;
   m_frameRate = 0;
@@ -94,6 +95,7 @@ VideoStreamServer::StartApplication (void)
 {
   NS_LOG_FUNCTION (this);
 
+  m_running = true;
   if (m_socket == 0)
   {
     TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
@@ -136,14 +138,16 @@ VideoStreamServer::StartApplication (void)
     }
   }
 
-  m_socket->SetAllowBroadcast (true);
-  m_sendEvent = Simulator::Schedule (Seconds (0.0), &VideoStreamServer::Send, this);
+  // m_socket->SetAllowBroadcast (true);
+  ScheduleTransmit (Seconds (0.0));
 }
 
 void
 VideoStreamServer::StopApplication ()
 {
   NS_LOG_FUNCTION (this);
+
+  m_running = false;
 
   if (m_socket != 0)
   {
@@ -185,7 +189,10 @@ void
 VideoStreamServer::ScheduleTransmit (Time dt)
 {
   NS_LOG_FUNCTION (this << dt);
-  m_sendEvent = Simulator::Schedule (dt, &VideoStreamServer::Send, this);
+  if (m_running)
+  {
+    m_sendEvent = Simulator::Schedule (dt, &VideoStreamServer::Send, this);
+  }
 }
 
 void 
@@ -200,21 +207,22 @@ VideoStreamServer::Send (void)
   for (uint i = 0; i < m_frameSize / m_maxPacketSize; i++)
   {
     p = Create<Packet> (m_maxPacketSize);
-    if ((m_socket->Send (p)) >= 0)
-    {
-      NS_LOG_INFO ("Sent" << m_maxPacketSize << " bytes to " << m_peerAddress);
-    }
-    else
-    {
-      NS_LOG_INFO ("Error while sending " << m_maxPacketSize << "bytes to " << m_peerAddress);
-    }
+    m_socket->Send (p);
+    // if ((m_socket->Send (p)) >= 0)
+    // {
+    //   NS_LOG_INFO ("Sent " << m_maxPacketSize << " bytes to " << m_peerAddress);
+    // }
+    // else
+    // {
+    //   NS_LOG_INFO ("Error while sending " << m_maxPacketSize << "bytes to " << m_peerAddress);
+    // }
   }
 
   uint16_t remainder = m_frameSize % m_maxPacketSize;
   p = Create<Packet> (remainder);
   m_socket->Send(p);
 
-  m_sendEvent = Simulator::Schedule (MilliSeconds (100), &VideoStreamServer::Send, this); 
+  ScheduleTransmit (Seconds (1.0 / m_frameRate));
 }
 
 }

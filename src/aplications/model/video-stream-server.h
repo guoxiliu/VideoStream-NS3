@@ -93,6 +93,7 @@ class Packet;
      */
     void Send (void);
 
+    bool m_running; //!< Application is running or not
     Time m_interval; //!< Packet inter-send time
     uint16_t m_maxPacketSize; //!< Maximum size of the packet to be sent
 
