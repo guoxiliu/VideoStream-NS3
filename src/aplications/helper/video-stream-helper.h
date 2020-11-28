@@ -29,13 +29,20 @@ private:
   ObjectFactory m_factory;
 
 public:
+/**
+   * @brief Construct a new VideoStreamServerHelper object. 
+   * 
+   * @param ip the IP address of the remote client
+   * @param port the port number of the remote client
+   */
+  VideoStreamServerHelper (Address ip, uint16_t port);
   /**
    * @brief Construct a new VideoStreamServerHelper object. 
    * 
-   * @param port the port the server will wait on for incoming packets
+   * @param addr the address of the remote client
    */
-  VideoStreamServerHelper (uint16_t port);
-
+  VideoStreamServerHelper (Address addr);
+  
   /**
    * @brief Record an attribute to be set in each application after it is created.
    * 
@@ -84,18 +91,11 @@ private:
 
 public:
   /**
-   * @brief Create a client application that receives the video frames from a server.
+   * @brief Construct a new VideoStreamClientHelper object. 
    * 
-   * @param ip the IP address of the remote server
-   * @param port the port number of the remote server
+   * @param port the port the client will receive incoming packets
    */
-  VideoStreamClientHelper (Address ip, uint16_t port);
-  /**
-   * @brief Create a client application that receives the video frames from a server.
-   * 
-   * @param addr the address of the remote server
-   */
-  VideoStreamClientHelper (Address addr);
+  VideoStreamClientHelper (uint16_t port);
   /**
    * @brief Record an attribute to be set in each application after it is created.
    * 

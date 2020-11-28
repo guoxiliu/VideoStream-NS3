@@ -36,7 +36,7 @@ VideoStreamServer::GetTypeId (void)
                     MakeAddressAccessor (&VideoStreamServer::m_peerAddress),
                     MakeAddressChecker ())
     .AddAttribute ("RemotePort", "The destination port of the outbound packets",
-                    UintegerValue (0),
+                    UintegerValue (5000),
                     MakeUintegerAccessor (&VideoStreamServer::m_peerPort),
                     MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("MaxPacketSize", "The maximum size of a packet",
