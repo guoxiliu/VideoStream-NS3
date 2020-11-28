@@ -27,27 +27,26 @@ VideoStreamServer::GetTypeId (void)
     .SetParent<Application> ()
     .SetGroupName("Applications")
     .AddConstructor<VideoStreamServer> ()
-    .AddAttribute ("Interval",
-                    "The time to wait between packets",
+    .AddAttribute ("Interval", "The time to wait between packets",
                     TimeValue (Seconds (1.0)),
                     MakeTimeAccessor (&VideoStreamServer::m_interval),
                     MakeTimeChecker ())
-    .AddAttribute ("RemoteAddress",
-                    "The destination address of the outbound packets",
+    .AddAttribute ("RemoteAddress", "The destination address of the outbound packets",
                     AddressValue (),
                     MakeAddressAccessor (&VideoStreamServer::m_peerAddress),
                     MakeAddressChecker ())
-    .AddAttribute ("RemotePort",
-                    "The destination port of the outbound packets",
+    .AddAttribute ("RemotePort", "The destination port of the outbound packets",
                     UintegerValue (0),
                     MakeUintegerAccessor (&VideoStreamServer::m_peerPort),
                     MakeUintegerChecker<uint16_t> ())
-    .AddAttribute ("PacketSize",
-                    "Size of the outbound packets",
-                    UintegerValue (100),
-                    MakeUintegerAccessor (&VideoStreamServer::SetDataSize, &VideoStreamServer::GetDataSize),
+    .AddAttribute ("MaxPacketSize", "The maximum size of a packet",
+                    UintegerValue (1400),
+                    MakeUintegerAccessor (&VideoStreamServer::m_maxPacketSize),
+                    MakeUintegerChecker<uint16_t> ())
+    .AddAttribute ("FrameSize", "Size of each frame",
+                    UintegerValue (4096),
+                    MakeUintegerAccessor (&VideoStreamServer::SetFrameSize, &VideoStreamServer::GetFrameSize),
                     MakeUintegerChecker<uint32_t> ())
-
     ;
     return tid;
 }
@@ -56,7 +55,8 @@ VideoStreamServer::VideoStreamServer ()
 {
   NS_LOG_FUNCTION (this);
   m_socket = 0;
-  m_size = 0;
+  m_maxPacketSize = 1400;
+  m_frameSize = 0;
   m_frameRate = 0;
   m_sendEvent = EventId ();
 }
@@ -137,7 +137,7 @@ VideoStreamServer::StartApplication (void)
   }
 
   m_socket->SetAllowBroadcast (true);
-  ScheduleTransmit (Seconds (0.));
+  m_sendEvent = Simulator::Schedule (Seconds (0.0), &VideoStreamServer::Send, this);
 }
 
 void
@@ -156,17 +156,29 @@ VideoStreamServer::StopApplication ()
 }
 
 void 
-VideoStreamServer::SetDataSize (uint32_t dataSize)
+VideoStreamServer::SetFrameSize (uint32_t frameSize)
 {
-  NS_LOG_FUNCTION (this << dataSize);
-  m_size = dataSize;
+  NS_LOG_FUNCTION (this << frameSize);
+  m_frameSize = frameSize;
 }
 
 uint32_t
-VideoStreamServer::GetDataSize (void) const
+VideoStreamServer::GetFrameSize (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_size;
+  return m_frameSize;
+}
+
+void
+VideoStreamServer::SetMaxPacketSize (uint16_t maxPacketSize)
+{
+  m_maxPacketSize = maxPacketSize;
+}
+
+uint16_t
+VideoStreamServer::GetMaxPacketSize (void) const
+{
+  return m_maxPacketSize;
 }
 
 void 
@@ -183,10 +195,26 @@ VideoStreamServer::Send (void)
 
   NS_ASSERT (m_sendEvent.IsExpired ());
 
-  Ptr<Packet> p = Create<Packet> (m_size);
-  m_socket->Send (p);
+  Ptr<Packet> p;
+  // the frame might require several packets to send
+  for (uint i = 0; i < m_frameSize / m_maxPacketSize; i++)
+  {
+    p = Create<Packet> (m_maxPacketSize);
+    if ((m_socket->Send (p)) >= 0)
+    {
+      NS_LOG_INFO ("Sent" << m_maxPacketSize << " bytes to " << m_peerAddress);
+    }
+    else
+    {
+      NS_LOG_INFO ("Error while sending " << m_maxPacketSize << "bytes to " << m_peerAddress);
+    }
+  }
 
-  ScheduleTransmit (m_interval);
+  uint16_t remainder = m_frameSize % m_maxPacketSize;
+  p = Create<Packet> (remainder);
+  m_socket->Send(p);
+
+  m_sendEvent = Simulator::Schedule (MilliSeconds (100), &VideoStreamServer::Send, this); 
 }
 
 }

@@ -32,32 +32,46 @@ class Packet;
     virtual ~VideoStreamServer ();
 
     /**
-     * @brief Set the remote address and port.
+     * @brief Set the destination address and port.
      * 
-     * @param ip remote IP address
-     * @param port remote port
+     * @param ip destination IP address
+     * @param port destination port
      */
     void SetRemote (Address ip, uint16_t port);
     /**
-     * @brief Set the remote address.
+     * @brief Set the destination address.
      * 
-     * @param addr remote address
+     * @param addr destination address
      */
     void SetRemote (Address addr);
 
     /**
-     * @brief Set the data size of the packet.
+     * @brief Set the frame size of the video.
      * 
-     * @param dataSize the size of the data you want to send
+      * @param frameSize the number of bytes of each frame
      */
-    void SetDataSize (uint32_t dataSize);
+    void SetFrameSize (uint32_t frameSize);
 
     /**
-     * @brief Get the number of bytes that will be sent to the server.
+     * @brief Get the frame size of the video.
      * 
-     * @return the number of data bytes
+     * @return the number of bytes of each frame
      */
-    uint32_t GetDataSize (void) const;
+    uint32_t GetFrameSize (void) const;
+
+    /**
+     * @brief Set the maximum packet size.
+     * 
+     * @param maxPacketSize the largest number of bytes a packet can be
+     */
+    void SetMaxPacketSize (uint16_t maxPacketSize);
+
+    /**
+     * @brief Get the maximum packet size.
+     * 
+     * @return uint16_t the largest number of bytes a packet can be
+     */
+    uint16_t GetMaxPacketSize (void) const;
 
   protected:
     virtual void DoDispose (void);
@@ -80,14 +94,15 @@ class Packet;
     void Send (void);
 
     Time m_interval; //!< Packet inter-send time
-    uint32_t m_size; //!< Size of the sent packet
+    uint16_t m_maxPacketSize; //!< Maximum size of the packet to be sent
 
     Ptr<Socket> m_socket; //!< Socket
     Address m_peerAddress; //!< Remote peer address
     uint16_t m_peerPort; //!< Remote peer port
     EventId m_sendEvent; //!< Event to send the next packet
 
-    uint32_t m_frameRate; //!< Frame rate of the video
+    uint32_t m_frameSize; //!< Size of each frame
+    uint32_t m_frameRate; //!< Number of frames per second to be sent
   };
 
 } // namespace ns3
