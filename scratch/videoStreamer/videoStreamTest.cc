@@ -32,7 +32,7 @@ main (int argc, char *argv[])
   nodes.Create (2);
 
   PointToPointHelper pointToPoint;
-  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("1000Mbps"));
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("100Mbps"));
   pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
 
   NetDeviceContainer devices;
@@ -53,13 +53,14 @@ main (int argc, char *argv[])
 
   VideoStreamServerHelper videoServer (interfaces.GetAddress (1), 5000);
   videoServer.SetAttribute ("MaxPacketSize", UintegerValue (1400));
-  videoServer.SetAttribute ("FrameFile", StringValue ("./scratch/frameList.txt"));
+  videoServer.SetAttribute ("FrameFile", StringValue ("./scratch/videoStreamer/small.txt"));
   // videoServer.SetAttribute ("FrameSize", UintegerValue (4096));
 
   ApplicationContainer serverApp = videoServer.Install (nodes.Get (0));
   serverApp.Start (Seconds (1.0));
   serverApp.Stop (Seconds (100.0));
 
+  pointToPoint.EnablePcap ("videoStream", devices.Get (1), false);
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
