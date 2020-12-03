@@ -137,6 +137,7 @@ VideoStreamServer::StartApplication (void)
   }
 
   // m_socket->SetAllowBroadcast (true);
+  m_socket->SetRecvCallback (MakeCallback (&VideoStreamServer::HandleRead, this));
   ScheduleTransmit (Seconds (0.0));
 }
 
@@ -231,18 +232,43 @@ VideoStreamServer::SendPacket (uint32_t packetSize)
   {
     NS_LOG_INFO ("Error while sending " << packetSize << "bytes to " << m_peerAddress);
   }
-  else
+  // else
+  // {
+  //   if (Ipv4Address::IsMatchingType (m_peerAddress))
+  //   {
+  //     NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server sent " << packetSize << " bytes to " << Ipv4Address::ConvertFrom (m_peerAddress) << " port " << m_peerPort);
+  //   }
+  //   else if (Ipv6Address::IsMatchingType (m_peerAddress))
+  //   {
+  //     NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server sent " << packetSize << " bytes to " << Ipv6Address::ConvertFrom (m_peerAddress) << " port " << m_peerPort);
+  //   }
+  // }
+  
+}
+
+void 
+VideoStreamServer::HandleRead (Ptr<Socket> socket)
+{
+  NS_LOG_FUNCTION (this << socket);
+
+  Ptr<Packet> packet;
+  Address from;
+  Address localAddress;
+  while ((packet = socket->RecvFrom (from)))
   {
-    if (Ipv4Address::IsMatchingType (m_peerAddress))
+    socket->GetSockName (localAddress);
+    if (InetSocketAddress::IsMatchingType (from))
     {
-      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server sent " << packetSize << " bytes to " << Ipv4Address::ConvertFrom (m_peerAddress) << " port " << m_peerPort);
-    }
-    else if (Ipv6Address::IsMatchingType (m_peerAddress))
-    {
-      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server sent " << packetSize << " bytes to " << Ipv6Address::ConvertFrom (m_peerAddress) << " port " << m_peerPort);
+      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server received " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom (from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());
+
+      uint8_t dataBuffer[10];
+      packet->CopyData (dataBuffer, 10);
+
+      uint16_t videoLevel;
+      sscanf((char *) dataBuffer, "%hu", &videoLevel);
+      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server received videolevel " << videoLevel);
     }
   }
-  
 }
 
 }

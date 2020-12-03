@@ -9,6 +9,8 @@
 #include "ns3/address.h"
 #include "ns3/traced-callback.h"
 
+#define MAX_VIDEO_LEVEL 4
+
 namespace ns3 {
 
 class Socket;
@@ -58,9 +60,14 @@ private:
   Address m_local; //!< Local multicast address
 
   uint16_t m_initialDelay; //!< Seconds to wait before displaying the content
+  uint16_t m_stopCounter; //!< Counter to decide if the video streaming finishes
+  uint16_t m_rebufferCounter; //!< Counter of the rebuffering event
+  uint16_t m_videoLevel; //!< The quality of the video from the server
   uint32_t m_frameRate; //!< Number of frames per second to be played
   uint32_t m_currentBufferSize; //!< Size of the frame buffer
+
   EventId m_bufferEvent; //!< Event to read from the buffer
+  EventId m_sendEvent; //!< Event to send data to the server
 
 };
 

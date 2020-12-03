@@ -103,6 +103,15 @@ class Packet;
      */
     void Send (void);
 
+    /**
+     * @brief Handle a packet reception.
+     * 
+     * This function is called by lower layers.
+     * 
+     * @param socket the socket the packet was received to
+     */
+    void HandleRead (Ptr<Socket> socket);
+
     Time m_interval; //!< Packet inter-send time
     uint32_t m_maxPacketSize; //!< Maximum size of the packet to be sent
 
