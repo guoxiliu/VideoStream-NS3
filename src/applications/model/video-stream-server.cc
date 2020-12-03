@@ -163,10 +163,13 @@ VideoStreamServer::SetFrameFile (std::string frameFile)
   m_frameFile = frameFile;
   std::string line;
   std::ifstream fileStream(frameFile);
-  for (int result; std::getline(fileStream, line); result = std::stoi(line))
+  while (std::getline (fileStream, line))
   {
+    int result = std::stoi(line);
     m_frameSizeList.push_back (result);
   }
+  
+  NS_LOG_INFO ("Frame list size: " << m_frameSizeList.size());
 }
 
 std::string
@@ -212,9 +215,9 @@ VideoStreamServer::Send (void)
 
   uint16_t remainder = frameSize % m_maxPacketSize;
   SendPacket (remainder);
-  m_sent++;
+  ++m_sent;
 
-  if (m_sent < m_frameSizeList.size() - 1)
+  if (m_sent < m_frameSizeList.size())
   {
     ScheduleTransmit (MilliSeconds (1000 / m_frameRate));
   }
@@ -228,6 +231,18 @@ VideoStreamServer::SendPacket (uint32_t packetSize)
   {
     NS_LOG_INFO ("Error while sending " << packetSize << "bytes to " << m_peerAddress);
   }
+  else
+  {
+    if (Ipv4Address::IsMatchingType (m_peerAddress))
+    {
+      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server sent " << packetSize << " bytes to " << Ipv4Address::ConvertFrom (m_peerAddress) << " port " << m_peerPort);
+    }
+    else if (Ipv6Address::IsMatchingType (m_peerAddress))
+    {
+      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server sent " << packetSize << " bytes to " << Ipv6Address::ConvertFrom (m_peerAddress) << " port " << m_peerPort);
+    }
+  }
+  
 }
 
 }

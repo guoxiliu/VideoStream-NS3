@@ -110,11 +110,13 @@ VideoStreamClient::ReadFromBuffer (void)
 {
   if (m_currentBufferSize < m_frameRate) 
   {
+    // NS_LOG_INFO ("Not enough frames in the buffer, rebuffering!");
     m_bufferEvent = Simulator::Schedule (Seconds (1.0), &VideoStreamClient::ReadFromBuffer, this);
     return (-1);
   }
   else
   {
+    // NS_LOG_INFO ("Play video frames from the buffer");
     m_currentBufferSize -= m_frameRate;
     m_bufferEvent = Simulator::Schedule (Seconds (1.0), &VideoStreamClient::ReadFromBuffer, this);
     return (m_currentBufferSize);
@@ -134,7 +136,7 @@ VideoStreamClient::HandleRead (Ptr<Socket> socket)
     socket->GetSockName (localAddress);
     if (InetSocketAddress::IsMatchingType (from))
     {
-      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s client received " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom (from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());
+      // NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s client received " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom (from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());
 
       m_currentBufferSize++;
     }
