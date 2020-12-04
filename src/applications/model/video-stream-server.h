@@ -117,7 +117,7 @@ class Packet;
     std::vector<uint32_t> m_frameSizeList; //!< List of video frame sizes
     
     std::unordered_map<uint32_t, ClientInfo*> m_clients; //!< Information saved for each client
-    const uint32_t m_frameSizes[5] = {0, 345600, 921600, 2073600, 2211840}; //!< Frame size for 480p, 720p, 1080p and 2K
+    const uint32_t m_frameSizes[6] = {0, 230400, 345600, 921600, 2073600, 2211840}; //!< Frame size for 360p, 480p, 720p, 1080p and 2K
   };
 
 } // namespace ns3

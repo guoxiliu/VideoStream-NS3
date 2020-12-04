@@ -48,7 +48,7 @@ VideoStreamClient::VideoStreamClient ()
   m_currentBufferSize = 0;
   m_frameSize = 0;
   m_frameRate = 25;
-  m_videoLevel = 1;
+  m_videoLevel = 3;
   m_stopCounter = 0;
   m_lastRecvFrame = 1e6;
   m_rebufferCounter = 0;

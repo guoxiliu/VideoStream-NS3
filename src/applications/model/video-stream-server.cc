@@ -29,7 +29,7 @@ VideoStreamServer::GetTypeId (void)
     .SetGroupName("Applications")
     .AddConstructor<VideoStreamServer> ()
     .AddAttribute ("Interval", "The time to wait between packets",
-                    TimeValue (Seconds (1.0)),
+                    TimeValue (Seconds (0.01)),
                     MakeTimeAccessor (&VideoStreamServer::m_interval),
                     MakeTimeChecker ())
     .AddAttribute ("Port", "Port on which we listen for incoming packets.",
@@ -234,7 +234,7 @@ VideoStreamServer::HandleRead (Ptr<Socket> socket)
       {
         ClientInfo *newClient = new ClientInfo();
         newClient->m_sent = 0;
-        newClient->m_videoLevel = 1;
+        newClient->m_videoLevel = 3;
         newClient->m_address = from;
         // newClient->m_sendEvent = EventId ();
         m_clients[ipAddr] = newClient;
