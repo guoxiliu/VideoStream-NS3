@@ -46,6 +46,7 @@ VideoStreamClient::VideoStreamClient ()
   m_initialDelay = 3;
   m_lastBufferSize = 0;
   m_currentBufferSize = 0;
+  m_frameSize = 0;
   m_frameRate = 25;
   m_videoLevel = 1;
   m_stopCounter = 0;
@@ -242,12 +243,20 @@ VideoStreamClient::HandleRead (Ptr<Socket> socket)
       uint32_t frameNum;
       sscanf ((char *) recvData, "%u", &frameNum);
 
-      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s client received frame " << frameNum << " and " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom (from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());
-
-      if (frameNum != m_lastRecvFrame)
+      if (frameNum == m_lastRecvFrame)
       {
+        m_frameSize += packet->GetSize ();
+      }
+      else
+      {
+        if (frameNum > 0)
+        {
+          NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s client received frame " << frameNum-1 << " and " << m_frameSize << " bytes from " <<  InetSocketAddress::ConvertFrom (from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());
+        }
+
         m_currentBufferSize++;
         m_lastRecvFrame = frameNum;
+        m_frameSize = packet->GetSize ();
       }
 
       // The rebuffering event has happend 3+ times, which suggest the client to lower the video quality.
@@ -283,4 +292,4 @@ VideoStreamClient::HandleRead (Ptr<Socket> socket)
   }
 }
 
-}
+} // namespace ns3

@@ -58,7 +58,6 @@ VideoStreamServer::VideoStreamServer ()
   m_socket = 0;
   m_frameRate = 25;
   m_frameSizeList = std::vector<uint32_t>();
-  m_sendEvent = EventId ();
 }
 
 VideoStreamServer::~VideoStreamServer ()
@@ -119,7 +118,11 @@ VideoStreamServer::StopApplication ()
     m_socket = 0;
   }
 
-  Simulator::Cancel (m_sendEvent);
+  for (auto iter = m_clients.begin (); iter != m_clients.end (); iter++)
+  {
+    Simulator::Cancel (iter->second->m_sendEvent);
+  }
+  
 }
 
 void 
@@ -163,11 +166,11 @@ void
 VideoStreamServer::Send (uint32_t ipAddress)
 {
   NS_LOG_FUNCTION (this);
-  NS_ASSERT (m_sendEvent.IsExpired ());
 
   uint32_t frameSize, totalFrames;
   ClientInfo *clientInfo = m_clients.at (ipAddress);
 
+  NS_ASSERT (clientInfo->m_sendEvent.IsExpired ());
   // If the frame sizes are not from the text file, and the list is empty
   if (m_frameSizeList.empty ())
   {
@@ -193,7 +196,7 @@ VideoStreamServer::Send (uint32_t ipAddress)
   clientInfo->m_sent += 1;
   if (clientInfo->m_sent < totalFrames)
   {
-    m_sendEvent = Simulator::Schedule (Seconds (1.0 / m_frameRate), &VideoStreamServer::Send, this, ipAddress);
+    clientInfo->m_sendEvent = Simulator::Schedule (Seconds (1.0 / m_frameRate), &VideoStreamServer::Send, this, ipAddress);
   }
 }
 
@@ -203,7 +206,7 @@ VideoStreamServer::SendPacket (ClientInfo *client, uint32_t packetSize)
   uint8_t dataBuffer[packetSize];
   sprintf ((char *) dataBuffer, "%u", client->m_sent);
   Ptr<Packet> p = Create<Packet> (dataBuffer, packetSize);
-  if (client->m_socket->SendTo (p, 0, client->m_address) < 0)
+  if (m_socket->SendTo (p, 0, client->m_address) < 0)
   {
     NS_LOG_INFO ("Error while sending " << packetSize << "bytes to " << InetSocketAddress::ConvertFrom (client->m_address).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (client->m_address).GetPort ());
   }
@@ -233,9 +236,9 @@ VideoStreamServer::HandleRead (Ptr<Socket> socket)
         newClient->m_sent = 0;
         newClient->m_videoLevel = 1;
         newClient->m_address = from;
-        newClient->m_socket = socket;
+        // newClient->m_sendEvent = EventId ();
         m_clients[ipAddr] = newClient;
-        m_sendEvent = Simulator::Schedule (Seconds (0.0), &VideoStreamServer::Send, this, ipAddr);
+        newClient->m_sendEvent = Simulator::Schedule (Seconds (0.0), &VideoStreamServer::Send, this, ipAddr);
       }
       else
       {
@@ -244,7 +247,7 @@ VideoStreamServer::HandleRead (Ptr<Socket> socket)
 
         uint16_t videoLevel;
         sscanf((char *) dataBuffer, "%hu", &videoLevel);
-        NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server received videolevel " << videoLevel);
+        NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server received video level " << videoLevel);
         m_clients.at (ipAddr)->m_videoLevel = videoLevel;
       }
     }

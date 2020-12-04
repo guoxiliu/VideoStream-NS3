@@ -76,10 +76,10 @@ class Packet;
     typedef struct ClientInfo
     {
       Address m_address; //!< Address
-      Ptr<Socket> m_socket; //!< Socket
       uint32_t m_sent; //!< Counter for sent frames
       uint16_t m_videoLevel; //! Video level
-    } ClientInfo;
+      EventId m_sendEvent; //! Send event used by the client
+    } ClientInfo; //! To be compatible with C language
 
     /**
      * @brief Send a packet with specified size.
@@ -110,7 +110,6 @@ class Packet;
 
     uint16_t m_port; //!< The port 
     Address m_local; //!< Local multicast address
-    EventId m_sendEvent; //!< Send events for different clients
 
     uint32_t m_frameRate; //!< Number of frames per second to be sent
     uint32_t m_videoLength; //!< Length of the video in seconds
