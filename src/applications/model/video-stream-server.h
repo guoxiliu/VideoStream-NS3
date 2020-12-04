@@ -11,7 +11,7 @@
 #include "ns3/traced-callback.h"
 
 #include <fstream>
-
+#include <unordered_map>
 namespace ns3 {
 
 class Socket;
@@ -33,20 +33,6 @@ class Packet;
     VideoStreamServer ();
 
     virtual ~VideoStreamServer ();
-
-    /**
-     * @brief Set the destination address and port.
-     * 
-     * @param ip destination IP address
-     * @param port destination port
-     */
-    void SetRemote (Address ip, uint16_t port);
-    /**
-     * @brief Set the destination address.
-     * 
-     * @param addr destination address
-     */
-    void SetRemote (Address addr);
 
     /**
      * @brief Set the name of the file containing the frame sizes.
@@ -85,23 +71,11 @@ class Packet;
     virtual void StopApplication (void);
 
     /**
-     * @brief Schedule the next packet transmission.
+     * @brief Send the video frame to the given ipv4 address.
      * 
-     * @param dt time interval between packets
+     * @param ipAddress ipv4 address
      */
-    void ScheduleTransmit (Time dt);
-
-    /**
-     * @brief Send a packet with specified size.
-     * 
-     * @param packetSize the number of bytes for the packet to be sent
-     */
-    void SendPacket (uint32_t packetSize);
-    
-    /**
-     * @brief Send the video frame from the frame list.
-     */
-    void Send (void);
+    void Send (uint32_t ipAddress);
 
     /**
      * @brief Handle a packet reception.
@@ -112,18 +86,32 @@ class Packet;
      */
     void HandleRead (Ptr<Socket> socket);
 
+    /**
+     * @brief The information required for each client.
+     */
+    typedef struct ClientInfo
+    {
+      Address m_address; //!< Address
+      Ptr<Socket> m_socket; //!< Socket
+      uint32_t m_sent; //!< Counter for sent frames
+      uint16_t m_videoLevel; //! Video level
+    } ClientInfo;
+
     Time m_interval; //!< Packet inter-send time
     uint32_t m_maxPacketSize; //!< Maximum size of the packet to be sent
-
-    uint32_t m_sent; //!< Counter for sent frames
     Ptr<Socket> m_socket; //!< Socket
-    Address m_peerAddress; //!< Remote peer address
-    uint16_t m_peerPort; //!< Remote peer port
-    EventId m_sendEvent; //!< Event to send the next packet
+
+    uint16_t m_port; //!< The port 
+    Address m_local; //!< Local multicast address
+    EventId m_sendEvent; //!< Send events for different clients
 
     uint32_t m_frameRate; //!< Number of frames per second to be sent
+    uint32_t m_videoLength; //!< Length of the video in seconds
     std::string m_frameFile; //!< Name of the file containing frame sizes
     std::vector<uint32_t> m_frameSizeList; //!< List of video frame sizes
+    
+    std::unordered_map<uint32_t, ClientInfo*> m_clients; //!< Information saved for each client
+    const uint32_t m_frameSizes[5] = {0, 345600, 921600, 2073600, 2211840}; //!< Frame size for 480p, 720p, 1080p and 2K
   };
 
 } // namespace ns3

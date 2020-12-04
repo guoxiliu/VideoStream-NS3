@@ -30,33 +30,11 @@ private:
 
 public:
   /**
-   * @brief Construct a new VideoStreamServerHelper object.
-   * 
-   * @param ip the IP address of the remote client
-   * @param port the port number of the remote client
-   * @param filename the file that stores the video frame sizes
-   */
-  VideoStreamServerHelper (Address ip, uint16_t port, std::string filename);
-  /**
    * @brief Construct a new VideoStreamServerHelper object. 
    * 
-   * @param ip the IP address of the remote client
-   * @param port the port number of the remote client
+   * @param port the port the server will receive incoming packets
    */
-  VideoStreamServerHelper (Address ip, uint16_t port);
-  /**
-   * @brief Construct a new VideoStreamServerHelper object.
-   * 
-   * @param addr the address of the remote client
-   * @param filename the file that stores the video frame sizes
-   */
-  VideoStreamServerHelper (Address addr, std::string filename);
-  /**
-   * @brief Construct a new VideoStreamServerHelper object. 
-   * 
-   * @param addr the address of the remote client
-   */
-  VideoStreamServerHelper (Address addr);
+  VideoStreamServerHelper (uint16_t port);
   
   /**
    * @brief Record an attribute to be set in each application after it is created.
@@ -108,9 +86,17 @@ public:
   /**
    * @brief Construct a new VideoStreamClientHelper object. 
    * 
-   * @param port the port the client will receive incoming packets
+   * @param ip the IP address of the remote server
+   * @param port the port number of the remote server
    */
-  VideoStreamClientHelper (uint16_t port);
+  VideoStreamClientHelper (Address ip, uint16_t port);
+  /**
+   * @brief Construct a new VideoStreamClientHelper object. 
+   * 
+   * @param addr the address of the remote server
+   */
+  VideoStreamClientHelper (Address addr);
+  
   /**
    * @brief Record an attribute to be set in each application after it is created.
    * 

@@ -8,32 +8,10 @@
 
 namespace ns3{
 
-VideoStreamServerHelper::VideoStreamServerHelper(Address ip, uint16_t port, std::string filename)
+VideoStreamServerHelper::VideoStreamServerHelper(uint16_t port)
 {
   m_factory.SetTypeId (VideoStreamServer::GetTypeId ());
-  SetAttribute ("RemoteAddress", AddressValue (ip));
-  SetAttribute ("RemotePort", UintegerValue (port));
-  SetAttribute ("FrameFile", StringValue (filename));
-}
-
-VideoStreamServerHelper::VideoStreamServerHelper(Address ip, uint16_t port)
-{
-  m_factory.SetTypeId (VideoStreamServer::GetTypeId ());
-  SetAttribute ("RemoteAddress", AddressValue (ip));
-  SetAttribute ("RemotePort", UintegerValue (port));
-}
-
-VideoStreamServerHelper::VideoStreamServerHelper(Address addr, std::string filename)
-{
-  m_factory.SetTypeId (VideoStreamServer::GetTypeId ());
-  SetAttribute ("RemoteAddress", AddressValue (addr));
-  SetAttribute ("FrameFile", StringValue (filename));
-}
-
-VideoStreamServerHelper::VideoStreamServerHelper(Address addr)
-{
-  m_factory.SetTypeId (VideoStreamServer::GetTypeId ());
-  SetAttribute ("RemoteAddress", AddressValue (addr));
+  SetAttribute ("Port", UintegerValue (port));
 }
 
 void
@@ -76,10 +54,18 @@ VideoStreamServerHelper::InstallPriv (Ptr<Node> node) const
   return app;
 }
 
-VideoStreamClientHelper::VideoStreamClientHelper(uint16_t port)
+VideoStreamClientHelper::VideoStreamClientHelper(Address ip, uint16_t port)
 {
   m_factory.SetTypeId (VideoStreamClient::GetTypeId ());
-  SetAttribute ("Port", UintegerValue (port));
+  SetAttribute ("RemoteAddress", AddressValue (ip));
+  SetAttribute ("RemotePort", UintegerValue (port));
+}
+
+
+VideoStreamClientHelper::VideoStreamClientHelper(Address addr)
+{
+  m_factory.SetTypeId (VideoStreamClient::GetTypeId ());
+  SetAttribute ("RemoteAddress", AddressValue (addr));
 }
 
 void

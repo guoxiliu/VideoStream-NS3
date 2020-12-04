@@ -46,18 +46,18 @@ main (int argc, char *argv[])
 
   Ipv4InterfaceContainer interfaces = address.Assign (devices);
 
-  VideoStreamClientHelper videoClient (5000);
+  VideoStreamClientHelper videoClient (interfaces.GetAddress (0), 5000);
   ApplicationContainer clientApp = videoClient.Install (nodes.Get (1));
-  clientApp.Start (Seconds (0.0));
+  clientApp.Start (Seconds (0.5));
   clientApp.Stop (Seconds (100.0));
 
-  VideoStreamServerHelper videoServer (interfaces.GetAddress (1), 5000);
+  VideoStreamServerHelper videoServer (5000);
   videoServer.SetAttribute ("MaxPacketSize", UintegerValue (1400));
   videoServer.SetAttribute ("FrameFile", StringValue ("./scratch/videoStreamer/small.txt"));
   // videoServer.SetAttribute ("FrameSize", UintegerValue (4096));
 
   ApplicationContainer serverApp = videoServer.Install (nodes.Get (0));
-  serverApp.Start (Seconds (1.0));
+  serverApp.Start (Seconds (0.0));
   serverApp.Stop (Seconds (100.0));
 
   pointToPoint.EnablePcap ("videoStream", devices.Get (1), false);

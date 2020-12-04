@@ -32,12 +32,18 @@ public:
   virtual ~VideoStreamClient ();
 
   /**
-   * @brief Read data from the frame buffer. If the buffer does not have 
-   * enough frames, it will reschedule the reading event next second.
+   * @brief Set the server address and port.
    * 
-   * @return the updated buffer size (-1 if the buffer size is smaller than the fps)
+   * @param ip server IP address
+   * @param port server port
    */
-  uint32_t ReadFromBuffer (void);
+  void SetRemote (Address ip, uint16_t port);
+  /**
+   * @brief Set the server address.
+   * 
+   * @param addr server address
+   */
+  void SetRemote (Address addr);
 
 protected:
   virtual void DoDispose (void);
@@ -45,6 +51,19 @@ protected:
 private: 
   virtual void StartApplication (void);
   virtual void StopApplication (void);
+
+  /**
+   * @brief Send the packet to the remote server.
+   */
+  void Send (void);
+
+  /**
+   * @brief Read data from the frame buffer. If the buffer does not have 
+   * enough frames, it will reschedule the reading event next second.
+   * 
+   * @return the updated buffer size (-1 if the buffer size is smaller than the fps)
+   */
+  uint32_t ReadFromBuffer (void);
 
   /**
    * @brief Handle a packet reception.
@@ -55,9 +74,9 @@ private:
    */
   void HandleRead (Ptr<Socket> socket);
 
-  uint16_t m_port; //!< Remote port
   Ptr<Socket> m_socket; //!< Socket
-  Address m_local; //!< Local multicast address
+  Address m_peerAddress; //!< Remote peer address
+  uint16_t m_peerPort; //!< Remote peer port
 
   uint16_t m_initialDelay; //!< Seconds to wait before displaying the content
   uint16_t m_stopCounter; //!< Counter to decide if the video streaming finishes
