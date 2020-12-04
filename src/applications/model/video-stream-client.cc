@@ -44,10 +44,12 @@ VideoStreamClient::VideoStreamClient ()
 {
   NS_LOG_FUNCTION (this);
   m_initialDelay = 3;
+  m_lastBufferSize = 0;
   m_currentBufferSize = 0;
   m_frameRate = 25;
   m_videoLevel = 1;
   m_stopCounter = 0;
+  m_lastRecvFrame = 1e6;
   m_rebufferCounter = 0;
   m_bufferEvent = EventId();
   m_sendEvent = EventId();
@@ -184,36 +186,40 @@ VideoStreamClient::Send (void)
 uint32_t 
 VideoStreamClient::ReadFromBuffer (void)
 {
-  if (m_currentBufferSize == 0)
+  // NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << " s, last buffer size: " << m_lastBufferSize << ", current buffer size: " << m_currentBufferSize);
+  if (m_currentBufferSize < m_frameRate) 
   {
-    // NS_LOG_INFO ("The video frame buffer is empty!");
 
-    m_stopCounter++;
-    if (m_stopCounter < 3)
+    if (m_lastBufferSize == m_currentBufferSize)
     {
+      m_stopCounter++;
+      // If the counter reaches 3, which means the client has been waiting for 3 sec, and no packets arrived.
+      // In this case, we think the video streaming has finished, and there is no need to schedule the event.
+      if (m_stopCounter < 3)
+      {
+        m_bufferEvent = Simulator::Schedule (Seconds (1.0), &VideoStreamClient::ReadFromBuffer, this);
+      }
+    }
+    else
+    {
+      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << " s: Not enough frames in the buffer, rebuffering!");
+      m_stopCounter = 0;  // reset the stopCounter
+      m_rebufferCounter++;
       m_bufferEvent = Simulator::Schedule (Seconds (1.0), &VideoStreamClient::ReadFromBuffer, this);
     }
-    // If the counter reaches 3, which means the client has been waiting for 3 sec, and no packets arrived.
-    // In this case, we think the video streaming has finished, and there is no need to schedule the event.
-    return (-1);
-  }
-  else if (m_currentBufferSize < m_frameRate) 
-  {
-    // NS_LOG_INFO ("Not enough frames in the buffer, rebuffering!");
 
-    if (m_stopCounter > 0) m_stopCounter = 0;    // reset the stopCounter
-    m_rebufferCounter++;
-    m_bufferEvent = Simulator::Schedule (Seconds (1.0), &VideoStreamClient::ReadFromBuffer, this);
+    m_lastBufferSize = m_currentBufferSize;
     return (-1);
   }
   else
   {
-    // NS_LOG_INFO ("Play video frames from the buffer");
+    NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << " s: Play video frames from the buffer");
     if (m_stopCounter > 0) m_stopCounter = 0;    // reset the stopCounter
     if (m_rebufferCounter > 0) m_rebufferCounter = 0;   // reset the rebufferCounter
     m_currentBufferSize -= m_frameRate;
 
     m_bufferEvent = Simulator::Schedule (Seconds (1.0), &VideoStreamClient::ReadFromBuffer, this);
+    m_lastBufferSize = m_currentBufferSize;
     return (m_currentBufferSize);
   }
 }
@@ -231,10 +237,18 @@ VideoStreamClient::HandleRead (Ptr<Socket> socket)
     socket->GetSockName (localAddress);
     if (InetSocketAddress::IsMatchingType (from))
     {
-      // NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s client received " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom (from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());
+      uint8_t recvData[packet->GetSize()];
+      packet->CopyData (recvData, packet->GetSize ());
+      uint32_t frameNum;
+      sscanf ((char *) recvData, "%u", &frameNum);
 
-      m_currentBufferSize++;
-      uint8_t dataBuffer[10];
+      NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s client received frame " << frameNum << " and " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom (from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());
+
+      if (frameNum != m_lastRecvFrame)
+      {
+        m_currentBufferSize++;
+        m_lastRecvFrame = frameNum;
+      }
 
       // The rebuffering event has happend 3+ times, which suggest the client to lower the video quality.
       if (m_rebufferCounter >= 3)
@@ -244,12 +258,12 @@ VideoStreamClient::HandleRead (Ptr<Socket> socket)
           NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s: Lower the video quality level!");
           m_videoLevel--;
           // reflect the change to the server
+          uint8_t dataBuffer[10];
           sprintf((char *) dataBuffer, "%hu", m_videoLevel);
           Ptr<Packet> levelPacket = Create<Packet> (dataBuffer, 10);
           socket->SendTo (levelPacket, 0, from);
         }
       }
-
       
       // If the current buffer size supports 5+ seconds video, we can try to increase the video quality level.
       if (m_currentBufferSize > 5 * m_frameRate)
@@ -259,6 +273,7 @@ VideoStreamClient::HandleRead (Ptr<Socket> socket)
           NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds() << "s: Increase the video quality level!");
           m_videoLevel++;
           // reflect the change to the server
+          uint8_t dataBuffer[10];
           sprintf((char *) dataBuffer, "%hu", m_videoLevel);
           Ptr<Packet> levelPacket = Create<Packet> (dataBuffer, 10);
           socket->SendTo (levelPacket, 0, from);

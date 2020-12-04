@@ -71,6 +71,24 @@ class Packet;
     virtual void StopApplication (void);
 
     /**
+     * @brief The information required for each client.
+     */
+    typedef struct ClientInfo
+    {
+      Address m_address; //!< Address
+      Ptr<Socket> m_socket; //!< Socket
+      uint32_t m_sent; //!< Counter for sent frames
+      uint16_t m_videoLevel; //! Video level
+    } ClientInfo;
+
+    /**
+     * @brief Send a packet with specified size.
+     * 
+     * @param packetSize the number of bytes for the packet to be sent
+     */
+    void SendPacket (ClientInfo *client, uint32_t packetSize);
+    
+    /**
      * @brief Send the video frame to the given ipv4 address.
      * 
      * @param ipAddress ipv4 address
@@ -85,17 +103,6 @@ class Packet;
      * @param socket the socket the packet was received to
      */
     void HandleRead (Ptr<Socket> socket);
-
-    /**
-     * @brief The information required for each client.
-     */
-    typedef struct ClientInfo
-    {
-      Address m_address; //!< Address
-      Ptr<Socket> m_socket; //!< Socket
-      uint32_t m_sent; //!< Counter for sent frames
-      uint16_t m_videoLevel; //! Video level
-    } ClientInfo;
 
     Time m_interval; //!< Packet inter-send time
     uint32_t m_maxPacketSize; //!< Maximum size of the packet to be sent

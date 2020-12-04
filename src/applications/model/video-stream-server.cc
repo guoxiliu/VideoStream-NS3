@@ -165,7 +165,6 @@ VideoStreamServer::Send (uint32_t ipAddress)
   NS_LOG_FUNCTION (this);
   NS_ASSERT (m_sendEvent.IsExpired ());
 
-  Ptr<Packet> p;
   uint32_t frameSize, totalFrames;
   ClientInfo *clientInfo = m_clients.at (ipAddress);
 
@@ -184,19 +183,29 @@ VideoStreamServer::Send (uint32_t ipAddress)
   // the frame might require several packets to send
   for (uint i = 0; i < frameSize / m_maxPacketSize; i++)
   {
-    p = Create<Packet> (m_maxPacketSize);
-    clientInfo->m_socket->SendTo (p, 0, clientInfo->m_address);
+    SendPacket (clientInfo, m_maxPacketSize);
   }
-  uint16_t remainder = frameSize % m_maxPacketSize;
-  p = Create<Packet> (remainder);
-  clientInfo->m_socket->Send (p);
-  clientInfo->m_sent++;
+  uint32_t remainder = frameSize % m_maxPacketSize;
+  SendPacket (clientInfo, remainder);
 
-  NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server sent " << frameSize << " bytes to " << InetSocketAddress::ConvertFrom (clientInfo->m_address).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (clientInfo->m_address).GetPort ());
+  NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server sent frame " << clientInfo->m_sent << " and " << frameSize << " bytes to " << InetSocketAddress::ConvertFrom (clientInfo->m_address).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (clientInfo->m_address).GetPort ());
 
+  clientInfo->m_sent += 1;
   if (clientInfo->m_sent < totalFrames)
   {
     m_sendEvent = Simulator::Schedule (Seconds (1.0 / m_frameRate), &VideoStreamServer::Send, this, ipAddress);
+  }
+}
+
+void 
+VideoStreamServer::SendPacket (ClientInfo *client, uint32_t packetSize)
+{
+  uint8_t dataBuffer[packetSize];
+  sprintf ((char *) dataBuffer, "%u", client->m_sent);
+  Ptr<Packet> p = Create<Packet> (dataBuffer, packetSize);
+  if (client->m_socket->SendTo (p, 0, client->m_address) < 0)
+  {
+    NS_LOG_INFO ("Error while sending " << packetSize << "bytes to " << InetSocketAddress::ConvertFrom (client->m_address).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (client->m_address).GetPort ());
   }
 }
 
