@@ -196,7 +196,7 @@ VideoStreamServer::Send (uint32_t ipAddress)
   clientInfo->m_sent += 1;
   if (clientInfo->m_sent < totalFrames)
   {
-    clientInfo->m_sendEvent = Simulator::Schedule (Seconds (1.0 / m_frameRate), &VideoStreamServer::Send, this, ipAddress);
+    clientInfo->m_sendEvent = Simulator::Schedule (m_interval, &VideoStreamServer::Send, this, ipAddress);
   }
 }
 

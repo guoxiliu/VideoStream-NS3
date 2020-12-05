@@ -271,6 +271,7 @@ VideoStreamClient::HandleRead (Ptr<Socket> socket)
           sprintf((char *) dataBuffer, "%hu", m_videoLevel);
           Ptr<Packet> levelPacket = Create<Packet> (dataBuffer, 10);
           socket->SendTo (levelPacket, 0, from);
+          m_rebufferCounter = 0;
         }
       }
       
@@ -279,13 +280,14 @@ VideoStreamClient::HandleRead (Ptr<Socket> socket)
       {
         if (m_videoLevel < MAX_VIDEO_LEVEL)
         {
-          NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds() << "s: Increase the video quality level!");
           m_videoLevel++;
           // reflect the change to the server
           uint8_t dataBuffer[10];
           sprintf((char *) dataBuffer, "%hu", m_videoLevel);
           Ptr<Packet> levelPacket = Create<Packet> (dataBuffer, 10);
           socket->SendTo (levelPacket, 0, from);
+          m_currentBufferSize = m_frameRate;
+          NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds() << "s: Increase the video quality level to " << m_videoLevel);
         }
       }
     }

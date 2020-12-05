@@ -9,7 +9,7 @@
 #include "ns3/address.h"
 #include "ns3/traced-callback.h"
 
-#define MAX_VIDEO_LEVEL 4
+#define MAX_VIDEO_LEVEL 6
 
 namespace ns3 {
 
