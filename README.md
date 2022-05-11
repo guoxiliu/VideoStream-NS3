@@ -24,7 +24,7 @@ ns-3 (version 3.30), Python (`python 2.7+` or `python 3.5+`), C++ compiler (`cla
 
 ### Detailed explanation
 
-[Frank](https://github.com/Frankytx) and I made a YouTube video for explaning what we did for the project. [Check out here!](https://youtu.be/AC9NV0Kkhd4) (Sorry for the microphone issue...)
+[Frank](https://github.com/Frankytx) and I made a YouTube video for explaning what we did for the project. [Check out here!](https://youtu.be/PEvXoRmz3tk) (Sorry for the microphone issue...)
 
 ## Results
 
