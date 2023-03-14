@@ -78,6 +78,10 @@ At time 2.61411s: Increase the video quality level to 4
 - We noticed that the mobile devices will lose connection to the server when it moves out of the range of wireless signals. However, we did not observe the transmission rate dropping when the mobile devices are away from the sever, which requires further investigation on how different modes work in the ns-3 wireless simulator. 
 - Due to the time limitation, we did not use the real video files for the transmission. It is also a good feature to add some decoders of video file formats to the application.
 
+## Resources
+
+- [Project report](https://arxiv.org/abs/2302.14196)
+
 ## References 
 
 1. The ns-3 development team, “ns-3 network simulator.” https://www.nsnam.org/docs/release/3.32/tutorial/html/ introduction.html. Accessed: 2020-11-28. 
